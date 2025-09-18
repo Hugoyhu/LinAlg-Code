@@ -1,3 +1,5 @@
+# Matrix class for creating and storing 2D integer matrices, with eq, str, and the elementary row operations.
+
 from tabulate import tabulate
 
 
