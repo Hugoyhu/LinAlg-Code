@@ -1,10 +1,14 @@
 # Matrix class for creating and storing 2D integer matrices, with eq, str, and the elementary row operations.
 
 from tabulate import tabulate
+import csv
 
 
 class Matrix:
-    def __init__(self, data):
+    def __init__(self):
+        self.data = [[0]]
+
+    def list_dataloader(self, data):
         """
         Initialize Matrix w/ 2D list data.
         Checks for empty matrices.
@@ -12,6 +16,24 @@ class Matrix:
         """
         if len(data) == 0:
             raise Exception("Empty Matrix")
+
+        self.data = data
+
+    def csv_dataloader(self, path):
+        """
+        Initialize Matrix from csv.
+        Floats okay.
+        Code is based off Mr. Honner's Import_Matrix code.
+        https://github.com/stuyphonner/LinAlg2025-26/blob/main/Importing_Matrices.py
+        """
+
+        with open(path) as f:
+            reader = csv.reader(f)
+            data = list(reader)
+
+        for col in range(len(data)):
+            for row in range(len(data[col])):
+                data[col][row] = float(data[col][row])
 
         self.data = data
 
@@ -53,6 +75,14 @@ class Matrix:
     def checkKOOB(self, c):
         if c == 0:
             raise Exception("c cannot be 0.")
+
+    def is_zero_row(self, data):
+        flag = True
+        for x in data:
+            if x != 0:
+                flag = False
+                break
+        return flag
 
     def return_row(self, row):
         """
@@ -99,3 +129,73 @@ class Matrix:
 
         for entry_ref in range(len(self.data[added_row])):
             self.data[changed_row][entry_ref] += self.data[added_row][entry_ref] * c
+
+    def solve_RREF(self, row_counter=0, col_counter=0):
+        """
+        Input matrix of size m x n, solve using Gauss-Jordan elimination. Recursive.
+        """
+
+        k = row_counter
+        s = col_counter
+
+        # data = Matrix(d)
+        num_rows = self.data.num_rows()
+        num_cols = self.data.num_cols()
+
+        # check if recursion has ended
+        if k >= num_rows:
+            return
+
+        entry = self.data.return_entry(k, s)
+
+        # Is (k, s) zero?
+        if self.data.return_entry(k, s) == 0:
+            # flag to check if entries found
+            flag = False
+
+            # check rows below k for non-zero entry in col s.
+            for r in range(k + 1, num_rows):
+                if self.data.return_entry(r, s) != 0:
+                    # first row w/ non-zero col s entry found, interchange & break.
+                    self.data.interchange_rows(r, k)
+                    flag = True
+                    break
+            if not flag:
+                # no non-zero entries found. call next interation
+                self.solve_RREF(k + 1, s + 1)
+        else:
+            # multiply row k by reciprocal of entry in (k, s)
+            reciprocal = 1 / (entry)
+            self.data.scale_row(k, reciprocal)
+
+            # for each row below k, add multiple of row k (with pivot = 1) to make initial pivot 0.
+            for r in range(k + 1, num_rows):
+                curr_entry = self.data.return_entry(r, s)
+                if curr_entry != 0:
+                    self.data.add_linear_multiple(r, k, (-1) * curr_entry)
+
+            self.solve_RREF(k + 1, s + 1)
+
+        # now, push the 0 rows down inefficiently
+        for a in range(num_rows):
+            for b in range(a, num_rows - 1):
+                row = self.data.return_row(b)
+                if self.is_zero_row(row):
+                    self.data.interchange_rows(b, b + 1)
+
+        # now, make every row pivot the only pivot in that row
+        # iterate over columns, then by rows (above)
+        for a in range(1, min(num_cols, num_rows)):
+            for b in range(0, a):
+                entry = self.data.return_entry(b, a)
+                if entry != 0:
+                    self.data.add_linear_multiple(b, a, (-1) * entry)
+
+        return
+
+    # def is_REF(self):
+    #     # iterates over each row, keeping track of row and "last non-zero col"
+    #     c_row = 0
+    #     last_pivot = 0
+
+    #     for row in range()

@@ -1,6 +1,6 @@
 # Testing use only to validate matrix.py!
 
-from matrix import Matrix
+from matpy import Matrix
 
 data = [
     [1, 1, 1, 2],

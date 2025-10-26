@@ -1,15 +1,14 @@
 # for testing RREF.py
 
-from matrix import Matrix
-from rref import solve_RREF
+import matrix
 
 
 def test(data, soln):
     """
     Test RREF function with data input and soln output
     """
-    m = Matrix(data)
-    solve_RREF(m)
+    m = matrix.Matrix(data)
+    m.solve_RREF()
     print(data == soln)
 
 

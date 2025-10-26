@@ -1,9 +1,9 @@
 # Computing -- Matrices and Lists, Due 09/22
 
-from matrix import Matrix
+import matpy
 
 
-def zero_row(data):
+def is_zero_row(data):
     flag = True
     for x in data:
         if x != 0:
@@ -12,7 +12,7 @@ def zero_row(data):
     return flag
 
 
-def solve_RREF(data: Matrix, row_counter=0, col_counter=0):
+def solve_RREF(data: matpy.Matrix, row_counter=0, col_counter=0):
     """
     Input matrix of size m x n, solve using Gauss-Jordan elimination. Recursive.
     """
@@ -62,7 +62,7 @@ def solve_RREF(data: Matrix, row_counter=0, col_counter=0):
     for a in range(num_rows):
         for b in range(a, num_rows - 1):
             row = data.return_row(b)
-            if zero_row(row):
+            if is_zero_row(row):
                 data.interchange_rows(b, b + 1)
 
     # now, make every row pivot the only pivot in that row
