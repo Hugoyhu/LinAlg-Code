@@ -7,7 +7,8 @@ def test(data, soln):
     """
     Test RREF function with data input and soln output
     """
-    m = matrix.Matrix(data)
+    m = matrix.Matrix()
+    m.list_dataloader(data)
     m.solve_RREF()
     print(data == soln)
 

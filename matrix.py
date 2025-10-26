@@ -76,9 +76,9 @@ class Matrix:
         if c == 0:
             raise Exception("c cannot be 0.")
 
-    def is_zero_row(self, data):
+    def is_zero_row(self, row):
         flag = True
-        for x in data:
+        for x in self.data[row]:
             if x != 0:
                 flag = False
                 break
@@ -193,9 +193,26 @@ class Matrix:
 
         return
 
-    # def is_REF(self):
-    #     # iterates over each row, keeping track of row and "last non-zero col"
-    #     c_row = 0
-    #     last_pivot = 0
+    def is_REF(self):
+        # iterates over each row, keeping track of "last pivot".
+        # also checks if zero-rows have started.
 
-    #     for row in range()
+        last_pivot = -1
+        zero_row_reached = False
+
+        for row in range(self.num_rows()):
+            is_zero = self.is_zero_row(row)
+            for col in range(self.num_cols()):
+                if self.data[row][col] != 0:
+                    if col <= last_pivot:
+                        # this means that the pivot isn't to the right of previous!
+                        return False
+                    last_pivot = col
+                    break
+
+            if zero_row_reached and not is_zero:
+                return False
+
+            zero_row_reached = is_zero
+
+        return True
