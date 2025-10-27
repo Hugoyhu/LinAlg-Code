@@ -2,6 +2,7 @@
 
 from tabulate import tabulate
 import csv
+import math
 
 
 class Matrix:
@@ -16,6 +17,10 @@ class Matrix:
         """
         if len(data) == 0:
             raise Exception("Empty Matrix")
+
+        for col in range(len(data)):
+            for row in range(len(data[col])):
+                data[col][row] = float(data[col][row])
 
         self.data = data
 
@@ -54,6 +59,8 @@ class Matrix:
             for b in range(self.num_cols()):
                 if self.data[a][b] != other.data[a][b]:
                     return False
+                # if not math.isclose(self.data[a][b], other.data[a][b], rel_tol=1e-9):
+                #     return False
 
         return True
 
@@ -138,58 +145,143 @@ class Matrix:
         k = row_counter
         s = col_counter
 
-        # data = Matrix(d)
-        num_rows = self.data.num_rows()
-        num_cols = self.data.num_cols()
+        num_rows = self.num_rows()
+        num_cols = self.num_cols()
 
         # check if recursion has ended
-        if k >= num_rows:
+        if k >= num_rows or s >= num_cols:
             return
 
-        entry = self.data.return_entry(k, s)
-
         # Is (k, s) zero?
-        if self.data.return_entry(k, s) == 0:
+        if abs(self.return_entry(k, s)) < 1e-10:
             # flag to check if entries found
             flag = False
 
             # check rows below k for non-zero entry in col s.
             for r in range(k + 1, num_rows):
-                if self.data.return_entry(r, s) != 0:
+                if abs(self.return_entry(r, s)) > 1e-10:
                     # first row w/ non-zero col s entry found, interchange & break.
-                    self.data.interchange_rows(r, k)
+                    self.interchange_rows(r, k)
+                    flag = True
+                    break
+            if not flag:
+                # no non-zero entries found. call next iteration with next column
+                self.solve_RREF(k, s + 1)
+                return
+
+        # multiply row k by reciprocal of entry in (k, s)
+        entry = self.return_entry(k, s)
+        if abs(entry) > 1e-10:
+            reciprocal = 1 / entry
+            self.scale_row(k, reciprocal)
+
+            # for each row below k, add multiple of row k (with pivot = 1) to make initial pivot 0.
+            for r in range(k + 1, num_rows):
+                curr_entry = self.return_entry(r, s)
+                if abs(curr_entry) > 1e-10:
+                    self.add_linear_multiple(r, k, (-1) * curr_entry)
+
+        self.solve_RREF(k + 1, s + 1)
+
+        # After forward elimination, do backward elimination
+        # Move zero rows to bottom
+        for a in range(num_rows - 1):
+            for b in range(a, num_rows - 1):
+                if self.is_zero_row(b) and not self.is_zero_row(b + 1):
+                    self.interchange_rows(b, b + 1)
+
+        # Make every pivot the only non-zero entry in its column (backward elimination)
+        for row in range(min(num_rows, num_cols) - 1, -1, -1):
+            # Find pivot column for this row
+            pivot_col = -1
+            for col in range(num_cols):
+                if abs(self.return_entry(row, col)) > 1e-10:
+                    pivot_col = col
+                    break
+
+            if pivot_col != -1:
+                # Eliminate entries above this pivot
+                for r in range(row):
+                    entry = self.return_entry(r, pivot_col)
+                    if abs(entry) > 1e-10:
+                        self.add_linear_multiple(r, row, (-1) * entry)
+
+        return
+
+    def solve_switch_RREF(self, row_counter=0, col_counter=0):
+        """
+        Input matrix of size m x n, solve using Gauss-Jordan elimination. Recursive.
+        This modified version switches rows with lots of zeroes closer to the bottom.
+        """
+
+        k = row_counter
+        s = col_counter
+
+        # data = Matrix(d)
+        num_rows = self.num_rows()
+        num_cols = self.num_cols()
+
+        # check if recursion has ended
+        if k >= num_rows or s >= num_cols:
+            return
+
+        # go through each remaining row starting at k, s to "swap" zeroes to bottom
+        curr_row = k
+        last_unswapped = num_rows - 1
+        while curr_row < last_unswapped:
+            entry = self.return_entry(curr_row, s)
+            # if 0, swap with last_unswapped and decrement last unswapped
+            # if not 0, increment row
+            if entry == 0:
+                self.interchange_rows(curr_row, last_unswapped)
+                last_unswapped -= 1
+            else:
+                curr_row += 1
+
+        entry = self.return_entry(k, s)
+
+        # Is (k, s) zero?
+        if self.return_entry(k, s) == 0:
+            # flag to check if entries found
+            flag = False
+
+            # check rows below k for non-zero entry in col s.
+            for r in range(k + 1, num_rows):
+                if self.return_entry(r, s) != 0:
+                    # first row w/ non-zero col s entry found, interchange & break.
+                    self.interchange_rows(r, k)
                     flag = True
                     break
             if not flag:
                 # no non-zero entries found. call next interation
-                self.solve_RREF(k + 1, s + 1)
+                self.solve_switch_RREF(k + 1, s + 1)
         else:
             # multiply row k by reciprocal of entry in (k, s)
             reciprocal = 1 / (entry)
-            self.data.scale_row(k, reciprocal)
+            self.scale_row(k, reciprocal)
 
             # for each row below k, add multiple of row k (with pivot = 1) to make initial pivot 0.
             for r in range(k + 1, num_rows):
-                curr_entry = self.data.return_entry(r, s)
+                curr_entry = self.return_entry(r, s)
                 if curr_entry != 0:
-                    self.data.add_linear_multiple(r, k, (-1) * curr_entry)
+                    self.add_linear_multiple(r, k, (-1) * curr_entry)
 
-            self.solve_RREF(k + 1, s + 1)
+            self.solve_switch_RREF(k + 1, s + 1)
 
         # now, push the 0 rows down inefficiently
         for a in range(num_rows):
             for b in range(a, num_rows - 1):
-                row = self.data.return_row(b)
-                if self.is_zero_row(row):
-                    self.data.interchange_rows(b, b + 1)
+                # row = self.return_row(b)
+                if self.is_zero_row(b):
+                    self.interchange_rows(b, b + 1)
 
         # now, make every row pivot the only pivot in that row
         # iterate over columns, then by rows (above)
         for a in range(1, min(num_cols, num_rows)):
             for b in range(0, a):
-                entry = self.data.return_entry(b, a)
+                entry = self.return_entry(b, a)
                 if entry != 0:
-                    self.data.add_linear_multiple(b, a, (-1) * entry)
+                    self.add_linear_multiple(b, a, (-1) * entry)
 
         return
 
