@@ -3,6 +3,7 @@
 from tabulate import tabulate
 import csv
 import math
+import numpy as np
 
 
 class Matrix:
@@ -255,6 +256,7 @@ class Matrix:
             if not flag:
                 # no non-zero entries found. call next interation
                 self.solve_switch_RREF(k + 1, s + 1)
+                return
         else:
             # multiply row k by reciprocal of entry in (k, s)
             reciprocal = 1 / (entry)
@@ -267,6 +269,7 @@ class Matrix:
                     self.add_linear_multiple(r, k, (-1) * curr_entry)
 
             self.solve_switch_RREF(k + 1, s + 1)
+            return
 
         # now, push the 0 rows down inefficiently
         for a in range(num_rows):
@@ -308,3 +311,93 @@ class Matrix:
             zero_row_reached = is_zero
 
         return True
+
+    def matrix_dimensions(self):
+        num_rows = len(self.data)
+        num_cols = len(self.data[0])
+        return (num_rows, num_cols)
+
+    def can_multiply_matrices(self, N: "Matrix"):
+        # you can multiply matrices M and N if M: axb and N: bxc
+
+        # check columns of M (self):
+        m_size = self.matrix_dimensions()
+
+        # check rows of N:
+        n_size = N.matrix_dimensions()
+
+        return m_size[1] == n_size[0]
+
+    def matrix_product_entry(self, N: "Matrix", i, j):
+        if not self.can_multiply_matrices(N):
+            raise Exception("Matrices cannot be multiplied")
+        # returns float
+
+        # row[0]*col[0] + row[1]*col[1] + ... row[n]*col[n]
+
+        sum = 0
+        for k in range(len(N.data)):
+            sum += (float(self.data[i][k])) * float((N.data[k][j]))
+
+        return sum
+
+    def multiply(self, N: "Matrix"):
+        if not self.can_multiply_matrices(N):
+            raise Exception("Matrices cannot be multiplied")
+
+        # determine output size
+        numRows = self.matrix_dimensions()[0]
+        numCols = N.matrix_dimensions()[1]
+
+        # create an empty matrix of mxn 0s
+        outData = np.zeros((numRows, numCols))
+
+        # iterate over rows then columns, finding each entry
+        for i in range(numRows):
+            for j in range(numCols):
+                outData[i][j] = self.matrix_product_entry(N, i, j)
+
+        out = Matrix()
+        out.list_dataloader(outData)
+
+        return out
+
+    def transpose(self):
+        dim = self.matrix_dimensions()
+        numRows = dim[0]
+        numCols = dim[1]
+
+        # create an empty matrix of nxm 0s
+        outData = np.zeros((numCols, numRows))
+
+        for i in range(numRows):
+            for j in range(numCols):
+                outData[j][i] = self.data[i][j]
+
+        return outData
+
+    def output_galois_field(self):
+        # converts input matrix M to a Matrix over Z_2
+        # in other words, we take modulo 2 on every entry.
+
+        dim = self.matrix_dimensions()
+        numRows = dim[0]
+        numCols = dim[1]
+
+        # create an empty matrix of mxn 0s
+        outData = np.zeros((numRows, numCols))
+
+        # iterate over rows then columns, finding each entry
+        for i in range(numRows):
+            for j in range(numCols):
+                outData[i][j] = self.data[i][j] % 2
+
+        return outData
+
+    def field_multiply(self, N: "Matrix"):
+        # multiplies then converts to matrix under z_2
+        # for any a, b: (a%2)*(b%2)= (a*b) %2.
+
+        out = self.multiply(N)
+
+        return out.output_galois_field()
