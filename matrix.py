@@ -342,6 +342,10 @@ class Matrix:
         return sum
 
     def multiply(self, N: "Matrix"):
+        """
+        Returns the matrix that results from multiplication of self and input.
+        An exception will be raised if the matrices cannot be multiplied.
+        """
         if not self.can_multiply_matrices(N):
             raise Exception("Matrices cannot be multiplied")
 
@@ -363,6 +367,9 @@ class Matrix:
         return out
 
     def transpose(self):
+        """
+        Returns the transposition of the matrix.
+        """
         dim = self.matrix_dimensions()
         numRows = dim[0]
         numCols = dim[1]
