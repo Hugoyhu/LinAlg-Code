@@ -13,3 +13,7 @@ M = [
 x = Graph()
 x.list_dataloader(M)
 x.inc_graph()
+
+newM = x.inc_matrix_from_graph(x.Graph)
+
+print(x.data == newM)

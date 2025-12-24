@@ -413,6 +413,10 @@ class Matrix:
 
 
 class Graph(Matrix):
+    def __init__(self):
+        self.data = [[0]]
+        self.Graph = nx.Graph()
+
     def test(self):
         # Hard-coded Incidence matrix. Play around and make changes to test your program.
         M = [
@@ -476,12 +480,12 @@ class Graph(Matrix):
         self.data = data
 
     def inc_graph(self):
-        G = nx.DiGraph()
+        self.Graph = nx.DiGraph()
 
         # our data is an mxn matrix. There are m rows and n columns, and n is the number of nodes.
         numNodes = self.num_cols()
         numEdges = self.num_rows()
-        G.add_nodes_from(range(1, numNodes + 1))
+        self.Graph.add_nodes_from(range(1, numNodes + 1))
 
         # add edges from each node.
         for edge in range(numEdges):
@@ -493,20 +497,36 @@ class Graph(Matrix):
                     start += node
                 if val == -1:
                     end += node
-            G.add_edge(start, end)
+            self.Graph.add_edge(start, end)
 
         # subax1 = plt.subplot(121)
-        nx.draw_circular(G, with_labels=True, font_weight="bold")
+        nx.draw_circular(self.Graph, with_labels=True, font_weight="bold")
         plt.axis("equal")
         # subax2 = plt.subplot(122)
         # nx.draw_shell(
         #     G, nlist=[range(5, 10), range(5)], with_labels=True, font_weight="bold"
         # )
 
-        print(G.number_of_edges())
-        print(G.number_of_nodes())
+        print(self.Graph.number_of_edges())
+        print(self.Graph.number_of_nodes())
 
         plt.show()
+
+    def inc_matrix_from_graph(self, G: nx.Graph):
+        numNodes = len(list(G.nodes))
+        numEdges = len(list(G.edges))
+
+        # create edge x node array of 0s
+        M = np.zeros((numEdges, numNodes))
+
+        for edge in range(numEdges):
+            start = list(G.edges)[edge][0] - 1
+            end = list(G.edges)[edge][1] - 1
+
+            M[edge][start] = 1
+            M[edge][end] = -1
+
+        return M
 
     def adj_graph(self):
         # untested!
