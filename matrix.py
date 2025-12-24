@@ -4,6 +4,8 @@ from tabulate import tabulate
 import csv
 import math
 import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
 
 
 class Matrix:
@@ -408,3 +410,126 @@ class Matrix:
         out = self.multiply(N)
 
         return out.output_galois_field()
+
+
+class Graph(Matrix):
+    def test(self):
+        # Hard-coded Incidence matrix. Play around and make changes to test your program.
+        M = [
+            [1, -1, 0, 0, 0],
+            [1, 0, -1, 0, 0],
+            [1, 0, 0, -1, 0],
+            [0, 1, -1, 0, 0],
+            [0, 1, 0, -1, 0],
+            [0, 1, 0, 0, -1],
+            [0, 0, 1, -1, 0],
+        ]
+
+        example_row_1 = [0, 0, 0, 0, 0, 1, 0, 0, -1]
+        example_row_2 = [0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+
+        # A helpful piece of code:
+        # The index method return the index number of a element of a list
+
+        print(example_row_1, example_row_1.index(1))
+        print(example_row_2, example_row_2.index(-1))
+
+        e = (example_row_1.index(1), example_row_2.index(-1))
+
+        print(e)
+
+    def list_dataloader(self, data):
+        """
+        Initialize Matrix w/ 2D list data.
+        Checks for empty matrices.
+        Uses 0 indexing.
+        """
+        if len(data) == 0:
+            raise Exception("Empty Matrix")
+
+        for col in range(len(data)):
+            for row in range(len(data[col])):
+                if data[col][row] not in (0, 1, -1):
+                    raise Exception("Invalid Adjacency Matrix Entry")
+                data[col][row] = data[col][row]
+
+        self.data = data
+
+    def csv_dataloader(self, path):
+        """
+        Initialize Matrix from csv.
+        Floats okay.
+        Code is based off Mr. Honner's Import_Matrix code.
+        https://github.com/stuyphonner/LinAlg2025-26/blob/main/Importing_Matrices.py
+        """
+
+        with open(path) as f:
+            reader = csv.reader(f)
+            data = list(reader)
+
+        for col in range(len(data)):
+            for row in range(len(data[col])):
+                if data[col][row] not in (0, 1, -1):
+                    raise Exception("Invalid Adjacency Matrix Entry")
+                data[col][row] = data[col][row]
+
+        self.data = data
+
+    def inc_graph(self):
+        G = nx.DiGraph()
+
+        # our data is an mxn matrix. There are m rows and n columns, and n is the number of nodes.
+        numNodes = self.num_cols()
+        numEdges = self.num_rows()
+        G.add_nodes_from(range(1, numNodes + 1))
+
+        # add edges from each node.
+        for edge in range(numEdges):
+            start = 1
+            end = 1
+            for node in range(numNodes):
+                val = self.return_entry(edge, node)
+                if val == 1:
+                    start += node
+                if val == -1:
+                    end += node
+            G.add_edge(start, end)
+
+        # subax1 = plt.subplot(121)
+        nx.draw_circular(G, with_labels=True, font_weight="bold")
+        plt.axis("equal")
+        # subax2 = plt.subplot(122)
+        # nx.draw_shell(
+        #     G, nlist=[range(5, 10), range(5)], with_labels=True, font_weight="bold"
+        # )
+
+        print(G.number_of_edges())
+        print(G.number_of_nodes())
+
+        plt.show()
+
+    def adj_graph(self):
+        # untested!
+
+        G = nx.Graph()
+
+        # our data is an nxn matrix. There are n rows and columns, which should be the number of nodes.
+        numNodes = self.num_cols()
+        G.add_nodes_from(range(1, numNodes + 1))
+
+        # add edges from each node.
+        for col in range(numNodes):
+            for row in range(numNodes):
+
+                val = self.return_entry(row, col)
+                if val == 1:
+                    G.add_edge(row, col)
+
+        subax1 = plt.subplot(121)
+        nx.draw(G, with_labels=True, font_weight="bold")
+        subax2 = plt.subplot(122)
+        nx.draw_shell(
+            G, nlist=[range(5, 10), range(5)], with_labels=True, font_weight="bold"
+        )
+
+        plt.show()
